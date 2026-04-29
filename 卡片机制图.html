@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #FAFAF8; }
+    #container { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<div id="container"></div>
+<script src="https://fastly.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+var chart = echarts.init(document.getElementById('container'), null, { renderer: 'canvas' });
+
+var option = {
+  tooltip: { trigger: 'item', triggerOn: 'mousemove' },
+  series: [{
+    type: 'tree',
+    data: [{
+      name: '🎮 开始游戏',
+      children: [
+        {
+          name: '👤 选择人格',
+          children: [
+            { name: '👴 固执大爷 ESTJ\n情绪抗性 0.7' },
+            { name: '👩 焦虑老妈 ESFJ\n情绪抗性 1.0' },
+            { name: '🧘 养生专家 ISFJ\n情绪抗性 1.2' },
+            { name: '🤨 阴谋论者 INTJ\n全抗性 0.85' },
+            { name: '😌 佛系邻居 INFP\n情绪抗性 1.2' },
+            { name: '👵 爱孙奶奶 ESFP\n情绪抗性 1.2' },
+          ]
+        },
+        {
+          name: '📋 回合开始',
+          children: [
+            {
+              name: '📢 展示谣言\n（68条·5大类·本局不重复）',
+              children: [
+                {
+                  name: '🃏 发6张候选牌',
+                  children: [
+                    {
+                      name: '✅ 正确辟谣 ×2\n（论据+情绪各1）',
+                      value: '降污染 × 人格抗性 + 回血'
+                    },
+                    {
+                      name: '❌ 明显错误 ×2\n（论据+特殊各1）',
+                      value: '降污染 × 30% -10HP\n→ 科普弹窗'
+                    },
+                    {
+                      name: '≈ 误导错误 ×2\n（情绪+特殊各1）',
+                      value: '看似正确实则错 -10HP\n→ 科普弹窗'
+                    },
+                  ]
+                },
+                {
+                  name: '🎯 胜负判定',
+                  children: [
+                    { name: '🏆 胜利\n污染度 ≤ 0' },
+                    { name: '💔 失败\n和谐度 ≤ 0' },
+                    { name: '➡️ 继续回合\n两者均未归零' },
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }],
+    left: '5%',
+    right: '5%',
+    top: '6%',
+    bottom: '8%',
+    symbol: 'roundRect',
+    symbolSize: [110, 36],
+    orient: 'vertical',
+    expandAndCollapse: true,
+    label: {
+      position: 'inside',
+      fontSize: 11,
+      fontFamily: '-apple-system, PingFang SC, Microsoft YaHei, sans-serif',
+      color: '#1A1A1A',
+      lineHeight: 18,
+    },
+    itemStyle: {
+      color: '#FFFFFF',
+      borderColor: '#E5E5E5',
+      borderWidth: 1,
+      shadowColor: 'rgba(0,0,0,0.06)',
+      shadowBlur: 4,
+    },
+    lineStyle: {
+      color: '#CBD5E1',
+      width: 1.5,
+      curveness: 0.5,
+    },
+    leaves: {
+      label: { position: 'bottom' },
+    },
+    emphasis: {
+      focus: 'descendant',
+      itemStyle: {
+        borderColor: '#2563EB',
+        borderWidth: 1.5,
+        shadowColor: 'rgba(37,99,235,0.15)',
+        shadowBlur: 8,
+      }
+    },
+    animationDurationUpdate: 600,
+  }]
+};
+
+chart.setOption(option);
+window.addEventListener('resize', chart.resize);
+</script>
+</body>
+</html>

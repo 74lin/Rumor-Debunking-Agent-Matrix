@@ -1,0 +1,546 @@
+================================================================================
+错误弹窗功能 - 完整技术实现方案
+================================================================================
+项目路径：E:\projects\BISHE\game\
+桌面备份路径：C:\Users\lin\Desktop\
+日期：2026-04-06
+================================================================================
+
+一、需要修改的文件清单
+================================================================================
+
+1. src/data/gameData.js          - 新增 wrongReason 和 correctReason 字段
+2. src/App.jsx                   - 新增弹窗状态和显示逻辑
+3. src/App.css                    - 新增弹窗样式
+4. src/components/ErrorPopup.jsx - 新建：错误弹窗组件
+
+================================================================================
+二、详细修改内容
+================================================================================
+
+--------------------------------------------------------------------------------
+文件1：src/data/gameData.js
+--------------------------------------------------------------------------------
+
+【修改位置】 rumorContent 中每条谣言新增两个字段
+
+【修改前结构】
+{
+  content: '谣言原文',
+  correct: '正确辟谣',
+  wrong: '明显错误的辟谣',
+  misleading: '误导性辟谣'
+}
+
+【修改后结构】
+{
+  content: '谣言原文',
+  correct: '正确辟谣',
+  wrong: '明显错误的辟谣',
+  misleading: '误导性辟谣',
+  wrongReason: '为什么这个辟谣是错的',
+  correctReason: '为什么正确辟谣是对的'
+}
+
+【示例修改（以health类第一条谣言为例）】
+
+修改前：
+{
+  content: '震惊！微波炉辐射会致癌！转发救家人！',
+  correct: '微波炉是非电离辐射，无法破坏DNA致癌',
+  wrong: '微波炉辐射很大，但洗洗就能用',
+  misleading: '微波炉确实有辐射，但致癌需要非常大剂量'
+}
+
+修改后：
+{
+  content: '震惊！微波炉辐射会致癌！转发救家人！',
+  correct: '微波炉是非电离辐射，无法破坏DNA致癌',
+  wrong: '微波炉辐射很大，但洗洗就能用',
+  misleading: '微波炉确实有辐射，但致癌需要非常大剂量',
+  wrongReason: '这个辟谣承认了"微波炉辐射致癌"的前提。实际上微波炉产生的是非电离辐射，无法破坏细胞DNA致癌，和辐射剂量无关。',
+  correctReason: '正确辟谣直接指出微波炉是非电离辐射，非电离辐射的能量不足以破坏DNA，因此无法致癌。'
+}
+
+【完整修改 - 请对30条谣言都进行同样的修改】
+
+==== rumorContent 结构（供参考，所有谣言都需要修改）====
+
+export const rumorContent = {
+  health: [
+    {
+      content: '震惊！微波炉辐射会致癌！转发救家人！',
+      correct: '微波炉是非电离辐射，无法破坏DNA致癌',
+      wrong: '微波炉辐射很大，但洗洗就能用',
+      misleading: '微波炉确实有辐射，但致癌需要非常大剂量',
+      wrongReason: '这个辟谣承认了"微波炉辐射致癌"的前提。实际上微波炉产生的是非电离辐射，无法破坏细胞DNA致癌，和辐射剂量无关。',
+      correctReason: '正确辟谣直接指出微波炉是非电离辐射，非电离辐射的能量不足以破坏DNA，因此无法致癌。'
+    },
+    {
+      content: '酸性体质致癌，碱性体质养生，赶紧吃碱性食物！',
+      correct: '酸碱体质是伪科学，人体pH值恒定不变',
+      wrong: '多喝醋就能改变酸性体质',
+      misleading: '酸性体质确实存在，但可以通过饮食慢慢调节',
+      wrongReason: '这个辟谣承认了"酸性体质存在"的前提。人体有强大的酸碱平衡系统，血液pH值恒定在7.35-7.45之间，任何食物都无法改变这个值。',
+      correctReason: '正确辟谣指出"酸碱体质"本身就是一个被科学界否定的伪概念，人体pH值不会因饮食而改变。'
+    },
+    // ... 其他7条health类谣言同样修改
+  ],
+  food: [
+    // ... 6条同样修改
+  ],
+  social: [
+    // ... 6条同样修改
+  ],
+  conspiracy: [
+    // ... 6条同样修改
+  ],
+  tech: [
+    // ... 6条同样修改
+  ]
+};
+
+==== getRandomRumor 函数修改 ====
+
+【修改前】
+export function getRandomRumor(type = null) {
+  const types = Object.keys(rumorContent);
+  const selectedType = type || types[Math.floor(Math.random() * types.length)];
+  const rumors = rumorContent[selectedType];
+  const rumor = rumors[Math.floor(Math.random() * rumors.length)];
+  return {
+    content: rumor.content,
+    correct: rumor.correct,
+    wrong: rumor.wrong,
+    misleading: rumor.misleading,
+    type: selectedType
+  };
+}
+
+【修改后】
+export function getRandomRumor(type = null) {
+  const types = Object.keys(rumorContent);
+  const selectedType = type || types[Math.floor(Math.random() * types.length)];
+  const rumors = rumorContent[selectedType];
+  const rumor = rumors[Math.floor(Math.random() * rumors.length)];
+  return {
+    content: rumor.content,
+    correct: rumor.correct,
+    wrong: rumor.wrong,
+    misleading: rumor.misleading,
+    wrongReason: rumor.wrongReason,
+    correctReason: rumor.correctReason,
+    type: selectedType
+  };
+}
+
+--------------------------------------------------------------------------------
+文件2：src/App.jsx
+--------------------------------------------------------------------------------
+
+【新增状态变量】 在第35行后添加
+
+【新增代码】
+const [showErrorPopup, setShowErrorPopup] = useState(false);
+const [errorPopupData, setErrorPopupData] = useState(null);
+
+【新增函数 - 显示错误弹窗】 在 playCard 函数前添加
+
+const showWrongAnswer = (card, currentRumor) => {
+  const isMisleading = card.rebuttalType === 'misleading';
+  setErrorPopupData({
+    selectedAnswer: card.displayText,
+    correctAnswer: currentRumor.correct,
+    selectedReason: isMisleading ? currentRumor.wrongReason : currentRumor.wrongReason,
+    correctReason: currentRumor.correctReason,
+    isMisleading: isMisleading
+  });
+  setShowErrorPopup(true);
+};
+
+【修改 playCard 函数】 找到第62-72行的 if (card.isCorrect === false) 块
+
+【修改前】
+if (card.isCorrect === false) {
+  // 选错：伤害降低70%，无治疗，额外扣10HP
+  damage = Math.floor(damage * 0.3);
+  heal = 0;
+  hpChange = -10;
+  setMessage('辟谣错误！长辈更生气了！');
+} else {
+  // 选对：获得治疗
+  hpChange = heal;
+  setMessage('辟谣成功！谣言被削弱了！');
+}
+
+【修改后】
+if (card.isCorrect === false) {
+  // 选错：伤害降低70%，无治疗，额外扣10HP
+  damage = Math.floor(damage * 0.3);
+  heal = 0;
+  hpChange = -10;
+  setMessage('辟谣错误！长辈更生气了！');
+
+  // 显示错误解释弹窗
+  showWrongAnswer(card, currentRumor);
+
+  // 延迟执行惩罚，等玩家看完弹窗
+  setTimeout(() => {
+    setShowErrorPopup(false);
+    applyDamageAndCheck();
+  }, 100);
+
+  return; // 关键：等弹窗关闭后再继续
+} else {
+  // 选对：获得治疗
+  hpChange = heal;
+  setMessage('辟谣成功！谣言被削弱了！');
+  applyDamageAndCheck();
+}
+
+【新增函数 - 执行惩罚并检查】 在 playCard 函数后添加
+
+const applyDamageAndCheck = () => {
+  // 复用原有的伤害计算逻辑
+  // 这部分代码从 playCard 中抽取
+  const newEnemyHP = Math.max(0, enemyHealth - damage);
+  const newPlayerHP = Math.max(0, Math.min(MAX_HEALTH, playerHealth + hpChange));
+
+  setEnemyHealth(newEnemyHP);
+  setPlayerHealth(newPlayerHP);
+
+  // 播放音效
+  if (card.isCorrect !== false && heal > 0) {
+    playHealSound();
+  } else {
+    playDamageSound();
+  }
+
+  // 延迟后检查胜负
+  setTimeout(() => {
+    if (newEnemyHP <= 0) {
+      setGameResult('win');
+      setGameState('result');
+      playVictorySound();
+      setMessage('胜利！你成功击破了谣言！');
+      return;
+    }
+    if (newPlayerHP <= 0) {
+      setGameResult('lose');
+      setGameState('result');
+      playDefeatSound();
+      setMessage('失败！谣言占据了你的心灵...');
+      return;
+    }
+    // 没有结束 → 发新牌、进入下一回合
+    const newRound = round + 1;
+    const newRumor = getRandomRumor();
+    setCurrentRumor(newRumor);
+    setHandCards(getSixCards(newRumor));
+    setRound(newRound);
+    setMessage(`第 ${newRound} 回合 - 选择你的卡牌！`);
+    playDamageSound();
+  }, 600);
+};
+
+【注意】 上述修改涉及较大重构。更简单的方式是：
+
+【简化方案 - 不抽取函数】
+
+将 playCard 中选错后的处理改为：
+
+if (card.isCorrect === false) {
+  damage = Math.floor(damage * 0.3);
+  heal = 0;
+  hpChange = -10;
+  setMessage('辟谣错误！长辈更生气了！');
+
+  // 显示错误解释弹窗
+  showWrongAnswer(card, currentRumor);
+
+  // 设置标志，不立即执行，等弹窗关闭
+  return; // 提前return
+}
+
+// 选对的处理保持不变...
+
+【在 renderPlayingScreen 函数中添加弹窗组件】
+
+找到 return 语句前的位置，添加：
+
+<ErrorPopup
+  show={showErrorPopup}
+  data={errorPopupData}
+  onClose={() => {
+    setShowErrorPopup(false);
+    // 弹窗关闭后继续执行惩罚逻辑
+    // 需要重新调用部分 playCard 逻辑
+    const damage = Math.floor((errorPopupData?.selectedCard?.damage || 10) * 0.3);
+    const hpChange = -10;
+    const newEnemyHP = Math.max(0, enemyHealth - damage);
+    const newPlayerHP = Math.max(0, Math.min(MAX_HEALTH, playerHealth + hpChange));
+
+    setEnemyHealth(newEnemyHP);
+    setPlayerHealth(newPlayerHP);
+    playDamageSound();
+
+    setTimeout(() => {
+      if (newEnemyHP <= 0) {
+        setGameResult('win');
+        setGameState('result');
+        playVictorySound();
+        setMessage('胜利！你成功击破了谣言！');
+      } else if (newPlayerHP <= 0) {
+        setGameResult('lose');
+        setGameState('result');
+        playDefeatSound();
+        setMessage('失败！谣言占据了你的心灵...');
+      } else {
+        const newRound = round + 1;
+        const newRumor = getRandomRumor();
+        setCurrentRumor(newRumor);
+        setHandCards(getSixCards(newRumor));
+        setRound(newRound);
+        setMessage(`第 ${newRound} 回合 - 选择你的卡牌！`);
+        playDamageSound();
+      }
+    }, 600);
+  }}
+/>
+
+【修改 import 部分】 添加 ErrorPopup 导入
+
+import ErrorPopup from './components/ErrorPopup';
+
+--------------------------------------------------------------------------------
+文件3：src/components/ErrorPopup.jsx
+--------------------------------------------------------------------------------
+
+【新建文件 - 完整内容】
+
+import { motion, AnimatePresence } from 'framer-motion';
+import '../App.css';
+
+export default function ErrorPopup({ show, data, onClose }) {
+  if (!show || !data) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          zIndex: 1000
+        }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          style={{
+            backgroundColor: '#1A1A2E',
+            border: '4px solid #FF6B6B',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '360px',
+            width: '100%',
+            boxShadow: '0 0 30px rgba(255, 107, 107, 0.5)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 style={{
+            fontFamily: "'Courier New', monospace",
+            fontSize: '18px',
+            color: '#FF6B6B',
+            textAlign: 'center',
+            marginBottom: '16px',
+            textTransform: 'uppercase'
+          }}>
+            辟谣失败！
+          </h2>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{
+              fontSize: '12px',
+              color: '#8888AA',
+              marginBottom: '4px',
+              fontFamily: "'Courier New', monospace"
+            }}>
+              你的选择（错误）
+            </div>
+            <div style={{
+              backgroundColor: '#2A1A1A',
+              border: '2px solid #FF6B6B',
+              borderRadius: '4px',
+              padding: '10px',
+              fontSize: '13px',
+              color: '#FF6B6B',
+              fontFamily: "'Courier New', monospace",
+              lineHeight: '1.4'
+            }}>
+              {data.selectedAnswer}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{
+              fontSize: '12px',
+              color: '#8888AA',
+              marginBottom: '4px',
+              fontFamily: "'Courier New', monospace"
+            }}>
+              正确辟谣
+            </div>
+            <div style={{
+              backgroundColor: '#1A2A1A',
+              border: '2px solid #6BCB77',
+              borderRadius: '4px',
+              padding: '10px',
+              fontSize: '13px',
+              color: '#6BCB77',
+              fontFamily: "'Courier New', monospace",
+              lineHeight: '1.4'
+            }}>
+              {data.correctAnswer}
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: '#16213E',
+            border: '2px solid #4A4A6A',
+            borderRadius: '4px',
+            padding: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              fontSize: '12px',
+              color: '#FFD93D',
+              marginBottom: '8px',
+              fontFamily: "'Courier New', monospace",
+              textTransform: 'uppercase'
+            }}>
+              为什么错了？
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: '#E8E8E8',
+              fontFamily: "'Courier New', monospace",
+              lineHeight: '1.5'
+            }}>
+              {data.correctReason}
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#00D9FF',
+              color: '#1A1A2E',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '14px',
+              fontFamily: "'Courier New', monospace",
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
+            }}
+          >
+            我知道了
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+--------------------------------------------------------------------------------
+文件4：src/App.css
+--------------------------------------------------------------------------------
+
+【新增样式】 在文件末尾添加
+
+/* 错误弹窗样式已内联在 ErrorPopup 组件中 */
+
+--------------------------------------------------------------------------------
+三、getSixCards 函数修改
+--------------------------------------------------------------------------------
+
+【修改位置】 gameData.js 中的 getSixCards 函数
+
+【修改前】 直接设置 displayText 和 isCorrect
+
+result.push({
+  ...rationalCorrect,
+  displayText: rumor.correct,
+  isCorrect: true
+});
+
+【修改后】 需要传递 rebuttalType 以便弹窗显示区分
+
+result.push({
+  ...rationalCorrect,
+  displayText: rumor.correct,
+  isCorrect: true,
+  rebuttalType: 'correct'
+});
+
+【同样修改其他 result.push】
+
+// 错误辟谣
+result.push({
+  ...rationalWrong,
+  displayText: rumor.wrong,
+  isCorrect: false,
+  rebuttalType: 'wrong'
+});
+
+// 误导性辟谣
+result.push({
+  ...emotionMisleading,
+  displayText: rumor.misleading,
+  isCorrect: false,
+  rebuttalType: 'misleading'
+});
+
+================================================================================
+四、简化实现建议（推荐）
+================================================================================
+
+由于完整的函数抽取和重构比较复杂，建议采用以下简化方案：
+
+1. 在 gameData.js 中新增 wrongReason 和 correctReason
+2. 新建 ErrorPopup.jsx 组件
+3. 在 App.jsx 中：
+   - 新增状态变量
+   - 在 playCard 选错时设置弹窗数据并 return
+   - 在 renderPlayingScreen 中添加 ErrorPopup
+   - 在 ErrorPopup onClose 时继续执行惩罚逻辑
+
+简化方案的 onClose 回调中直接写惩罚逻辑，不抽取函数。
+
+================================================================================
+五、工作量估算
+================================================================================
+
+1. gameData.js: 修改30条谣言的字段结构，约30分钟
+2. ErrorPopup.jsx: 新建组件，约10分钟
+3. App.jsx: 修改状态和逻辑，约20分钟
+4. 测试调试: 约30分钟
+
+总计: 约90分钟
+
+================================================================================

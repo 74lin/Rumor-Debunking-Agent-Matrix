@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>止谣于视 | 真实性辩证</title>
+    
+    <!-- 基础样式与库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #F5F5F7;
+            --text-color: #1D1D1F;
+            --accent-color: #0055FF;
+        }
+        body {
+            font-family: 'Inter', "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .neo-shadow { box-shadow: 8px 8px 0px 0px #1D1D1F; }
+        .neo-shadow-sm { box-shadow: 4px 4px 0px 0px #1D1D1F; }
+        .active-press:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px #1D1D1F;
+        }
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+            animation: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 深度扩展题库 (每类30题) ---
+        const QUESTION_BANK = {
+          '科技前沿': [
+            { id: 't1', claim: '量子计算机可以瞬间破解目前世界上所有的加密算法。', isFact: false, explanation: '目前量子比特数和纠错能力远达不到破解现代高强度加密（如RSA-2048）的水平。' },
+            { id: 't2', claim: '5G信号不会导致人类DNA变异或产生辐射病。', isFact: true, explanation: '5G使用的是非电离辐射，其能量不足以破坏化学键或导致DNA变异。' },
+            { id: 't3', claim: 'AI生成的画作在目前大多数国家法律下不享有著作权。', isFact: true, explanation: '多数国家法律目前只认可“人类创作者”，纯AI生成内容通常被视为公有领域。' },
+            { id: 't4', claim: '折叠屏手机的屏幕材质其实是塑料而非玻璃。', isFact: false, explanation: '现代折叠屏多采用超薄柔性玻璃(UTG)，虽然表面覆盖保护层，但核心层是玻璃。' },
+            { id: 't5', claim: '目前的L3级自动驾驶意味着驾驶员在任何时候都无需干预。', isFact: false, explanation: 'L3级是有条件自动化，系统负责监控，但在必要时（如系统报错）要求驾驶员立即接管。' },
+            { id: 't6', claim: '所有的NFT（非同质化代币）在区块链上都存储了完整的原始图像数据。', isFact: false, explanation: '绝大多数NFT只存储一个指向外部图像地址的链接（如IPFS或中心化服务器链接），而非图像本身。' },
+            { id: 't7', claim: '锂电池在充电到100%后继续插着电源会严重伤害电池寿命。', isFact: false, explanation: '现代电子设备有完善的电源管理系统，充满后会自动切换到外部供电并停止给电池充电。' },
+            { id: 't8', claim: 'ChatGPT等大模型具有自我意识和真实的情感感受。', isFact: false, explanation: '大模型本质上是基于概率的文本预测器，其“情感表达”是模仿训练数据的结果，而非真实意识。' },
+            { id: 't9', claim: '人造卫星在轨运行期间，其实不需要消耗任何能量来维持速度。', isFact: true, explanation: '在真空中，根据牛顿第一定律，一旦加速到轨道速度，卫星将保持惯性运动，消耗能量主要是为了姿态调整。' },
+            { id: 't10', claim: '虚拟现实(VR)眩晕症的主要原因是画面延迟超过了人脑的处理速度。', isFact: true, explanation: '当视觉信号（我在动）与前庭信号（我坐着）不一致时，大脑会产生保护性眩晕。' },
+            { id: 't11', claim: 'SpaceX的回收火箭技术是人类历史上第一次实现垂直起降火箭回收。', isFact: false, explanation: '虽然SpaceX实现了商业化成功，但DC-X实验飞行器在90年代就演示过垂直起降技术。' },
+            { id: 't12', claim: '比特币的交易是完全匿名、不可追踪的。', isFact: false, explanation: '比特币是伪匿名的，所有交易记录在公开账本上，通过链上分析可以关联到特定实体。' },
+            { id: 't13', claim: 'Wi-Fi 7的理论峰值速率超过了40Gbps。', isFact: true, explanation: 'Wi-Fi 7通过320MHz频宽、4096-QAM等技术极大提升了传输上限。' },
+            { id: 't14', claim: '目前人类已经可以大规模生产石墨烯手机屏幕。', isFact: false, explanation: '由于高质量、大面积石墨烯生产成本极高且工艺复杂，目前尚处于实验室或小规模应用阶段。' },
+            { id: 't15', claim: '深海光缆是目前全球互联网跨洲际传输的最主要物理载体。', isFact: true, explanation: '超过99%的跨洲际数据流量是通过海底光缆传输的，卫星传输仅占极小份额。' },
+            { id: 't16', claim: '固态电池目前已经完全取代了液态锂电池在乘用车上的应用。', isFact: false, explanation: '固态电池仍面临生产成本和循环寿命挑战，目前仅在极少数高端车型上进行半固态试点。' },
+            { id: 't17', claim: '所谓的“隐身战机”并不是在肉眼里隐形，而是在雷达波面前“隐身”。', isFact: true, explanation: '隐身战机通过特殊外形和涂层吸收反射雷达波，使其在雷达屏幕上看起来像只小鸟。' },
+            { id: 't18', claim: '现在的智能手机即使在关机状态下，也有可能被特定的恶意软件跟踪位置。', isFact: true, explanation: '部分新型恶意软件可篡改关机流程，使手机进入假关机状态以维持追踪能力。' },
+            { id: 't19', claim: 'Web3的核心定义是“去中心化的万维网”。', isFact: true, explanation: 'Web3旨在通过区块链和分布式技术，让用户拥有数据和价值的所有权。' },
+            { id: 't20', claim: '脑机接口（BCI）技术目前只能实现信息的“读取”，不能“写入”。', isFact: false, explanation: '现代BCI技术已能通过微电极阵列给大脑皮层提供刺激，实现部分视觉或触觉信号的写入。' },
+            { id: 't21', claim: '核聚变发电已经实现了长时间（如数天）的稳定并网商业运行。', isFact: false, explanation: '目前受控核聚变仍处于实验阶段，Q值（输出能量/输入能量）大于1的持续时间仅以秒/分计。' },
+            { id: 't22', claim: '深伪技术（Deepfake）最早是由于社交媒体巨头的实验室开源而普及的。', isFact: false, explanation: '该技术最早由于Reddit用户的自发项目和开源社区的推动而迅速扩散。' },
+            { id: 't23', claim: '目前所有的自动驾驶卡车在行驶时都必须配备人类安全员。', isFact: false, explanation: '在部分地区（如美国、中国特定区域），已获批开展无安全员的自动驾驶卡车测试或运营。' },
+            { id: 't24', claim: '液冷散热技术目前仅用于超级计算机和游戏PC。', isFact: false, explanation: '液冷技术已广泛应用于数据中心服务器和部分高性能智能手机内部。' },
+            { id: 't25', claim: '光刻机的波长越短，能蚀刻出的电路图案就越精细。', isFact: true, explanation: '这是根据衍射极限原理，EUV（极紫外光）使用13.5nm波长，远短于DUV。' },
+            { id: 't26', claim: '目前人类已经可以通过3D生物打印技术制造出具有完整功能的活体心脏。', isFact: false, explanation: '目前能打印出组织支架和微型心脏模型，但具有复杂血液循环和泵血功能的完整器官尚未实现。' },
+            { id: 't27', claim: '私有云比公有云在安全性上具有绝对的领先优势。', isFact: false, explanation: '安全性取决于管理水平；大型公有云服务商拥有更专业的安全团队和更新及时的安全补丁。' },
+            { id: 't28', claim: '量子纠缠可以实现超光速的信息瞬间传输。', isFact: false, explanation: '量子纠缠虽然是非定域的，但由于“无通信定理”，无法通过它传递有意义的信息。' },
+            { id: 't29', claim: '目前的碳纳米管技术已经可以制作出全功能的碳基微处理器。', isFact: true, explanation: '麻省理工学院等机构已成功研制出完全由碳纳米管晶体管制成的16位微处理器。' },
+            { id: 't30', claim: 'Starlink卫星具有自动避让空间碎片的自主机动能力。', isFact: true, explanation: '每颗星链卫星都配备了氪离子推进器和自主碰撞预测避让系统。' }
+          ],
+          '科学百科': [
+            { id: 's1', claim: '金鱼的记忆力实际上可以持续数月。', isFact: true, explanation: '“7秒记忆”是谣言，实验证明金鱼能记住复杂的迷宫和色彩识别。' },
+            { id: 's2', claim: '太空中完全没有重力。', isFact: false, explanation: '地球重力延伸很远，空间站的失重是因为它们正在进行持续的圆周坠落运动。' },
+            { id: 's3', claim: '仙人掌并不能吸收电脑产生的电磁辐射。', isFact: true, explanation: '仙人掌对可见光和紫外线有吸收，对电子设备产生的非电离辐射无特殊吸收效果。' },
+            { id: 's4', claim: '闪电从来不会在同一个地方击中两次。', isFact: false, explanation: '闪电倾向于击中高耸孤立的目标，帝国的摩天大楼每年被击中多次。' },
+            { id: 's5', claim: '蝙蝠是完全的瞎子，只能靠超声波看路。', isFact: false, explanation: '绝大多数蝙蝠都有视力，有些大蝙蝠（如狐蝠）视力极佳，主要靠眼看而非声呐。' },
+            { id: 's6', claim: '人类其实有五种以上的感官，如平衡感、温度感、疼痛感等。', isFact: true, explanation: '传统的“五感”过于简略，现代科学认为人类拥有近20种不同的感官。' },
+            { id: 's7', claim: '太阳的火焰是因为在真空中燃烧氧气产生的。', isFact: false, explanation: '太阳不是燃烧，而是核聚变，不需要氧气，而是通过压力使氢核聚变成氦。' },
+            { id: 's8', claim: '玻璃其实是一种流速极慢的液体，所以古窗户下面比较厚。', isFact: false, explanation: '玻璃是无定形固体。古窗户下部厚是制造工艺（吹制圆盘法）导致的安装选择，而非流动。' },
+            { id: 's9', claim: '牛看到红色就会变得愤怒并冲向斗牛士。', isFact: false, explanation: '牛是红绿色盲，让它愤怒的是斗牛士挥舞红布时的剧烈动作和挑衅。' },
+            { id: 's10', claim: '企鹅其实是有膝盖的，只是隐藏在厚厚的羽毛和皮下脂肪里。', isFact: true, explanation: '企鹅的骨骼结构显示它们有非常标准的膝关节，只是腿部很短。' },
+            { id: 's11', claim: '如果一个人在真空中不穿宇航服，他的身体会瞬间爆炸。', isFact: false, explanation: '由于皮肤的弹性和体液的压力，身体不会爆炸，但会由于缺氧昏迷和体液沸腾（阿姆斯特朗极限）。' },
+            { id: 's12', claim: '珠穆朗玛峰是距离地心最远的地方。', isFact: false, explanation: '由于地球是赤道隆起的椭球体，厄瓜多尔的钦博拉索山顶才是离地心最远的点。' },
+            { id: 's13', claim: '人类基因组中含有约8%的古代病毒残余序列。', isFact: true, explanation: '这些是古代逆转录病毒感染人类祖先并整合进生殖细胞后的遗迹。' },
+            { id: 's14', claim: '声音在水中的传播速度比在空气中快得多。', isFact: true, explanation: '水密度大且不可压缩性强，声音传播速度约是空气中的4.5倍。' },
+            { id: 's15', claim: '所有的北极熊其实皮肤都是黑色的，毛发是透明的管状。', isFact: true, explanation: '黑色皮肤有助于吸收阳光能量，透明毛发通过折射看起来呈白色。' },
+            { id: 's16', claim: '变色龙变色是为了与背景融合进行伪装。', isFact: false, explanation: '变色主要是为了调节体温（黑吸热白散热）以及表达情绪进行沟通。' },
+            { id: 's17', claim: '钻石是自然界中最坚硬的物质，没有任何东西能划伤它。', isFact: false, explanation: '钻石最硬，但很脆。且实验室合成的纳米孪晶立方氮化硼在某些条件下硬度可超天然钻。' },
+            { id: 's18', claim: '月球由于潮汐锁定，永远只有一面朝着地球。', isFact: true, explanation: '月球自转周期与公转周期完全相同，导致地球上的人只能看到一面。' },
+            { id: 's19', claim: '雨滴的形状并不是像眼泪那样的，而是像汉堡包顶部的面包圆顶。', isFact: true, explanation: '由于空气阻力，雨滴底部在下落时会被压扁。' },
+            { id: 's20', claim: '所有的鸟类都是恐龙演化而来的。', isFact: true, explanation: '现代系统发育学认为鸟类是兽脚类恐龙的直系后裔。' },
+            { id: 's21', claim: '微波炉加热食物是从内向外加热的。', isFact: false, explanation: '微波穿透深度有限，主要是通过水分子摩擦产生热量，从外部几厘米处向内传导。' },
+            { id: 's22', claim: '南极洲是地球上降水量最少的地方之一，属于干旱沙漠。', isFact: true, explanation: '由于极度严寒，空气含水量极低，南极内陆多年几乎无降水。' },
+            { id: 's23', claim: '猫从高处跌落总是四脚着地是因为它们有“翻正反射”。', isFact: true, explanation: '猫的前庭器官异常发达，能在极短时间内感知方向并调整体态。' },
+            { id: 's24', claim: '在彩虹的另一端，由于光的折射，颜色其实是反向排列的。', isFact: false, explanation: '只有在出现双彩虹（霓）时，外侧的那圈光带颜色才是反向的。' },
+            { id: 's25', claim: '大多数植物的绿色是因为叶绿体吸收了绿光。', isFact: false, explanation: '恰恰相反，绿色是因为叶绿素不吸收绿光，而是将其反射到了我们眼中。' },
+            { id: 's26', claim: '光速在所有的介质（如水、玻璃）中都是恒定不变的。', isFact: false, explanation: '光速仅在真空中恒定。在水中约降为真空速的75%，在玻璃中约降为67%。' },
+            { id: 's27', claim: '蜜蜂在叮咬人类后总是会死去。', isFact: true, explanation: '蜜蜂的蜇针有倒钩，叮咬后无法拔出，强行飞走会拉出内脏，但胡蜂不会。' },
+            { id: 's28', claim: '章鱼有三个心脏和蓝色的血液。', isFact: true, explanation: '两个心脏泵血到鳃，一个心脏泵血到全身；蓝色是因为含铜的血蓝蛋白。' },
+            { id: 's29', claim: '如果太阳突然熄灭，地球人需要经过约8分20秒才能察觉。', isFact: true, explanation: '这是光从太阳传播到地球所需的时间，引力波的传递速度也相同。' },
+            { id: 's30', claim: '世界上所有的沙子其实都有微弱的放射性。', isFact: true, explanation: '沙子中含有的钾-40等自然放射性同位素使其具有极其微弱的本底辐射。' }
+          ],
+          '历史真相': [
+            { id: 'h1', claim: '拿破仑的身高在当时的法国其实属于中等偏上。', isFact: true, explanation: '1.7米左右的身高在19世纪初期不算矮，矮子的传闻源于英法度量衡误差。' },
+            { id: 'h2', claim: '万里长城在太空中是唯一肉眼可见的人造建筑。', isFact: false, explanation: '这只是个都市传说，在太空中看长城极难，反而大坝和高速路更明显。' },
+            { id: 'h3', claim: '古埃及金字塔是由数以万计的奴隶在鞭笞下建造的。', isFact: false, explanation: '考古证据显示建造者是有酬劳的自由民和技术工，死后还被埋葬在金字塔附近。' },
+            { id: 'h4', claim: '维京海盗其实从来不戴带角的头盔。', isFact: true, explanation: '这种形象主要源于19世纪歌剧设计，带角的头盔在战斗中极易被卡住，很不实用。' },
+            { id: 'h5', claim: '哥伦布是第一个发现美洲大陆的欧洲人。', isFact: false, explanation: '北欧维京人莱夫·艾瑞克森早于哥伦布约500年就已到达北美纽芬兰。' },
+            { id: 'h6', claim: '美国独立宣言其实是在1776年7月4日签署完成的。', isFact: false, explanation: '7月4日是通过声明的日子，大规模签署直到8月才正式开始。' },
+            { id: 'h7', claim: '爱因斯坦小时候数学考试经常不及格。', isFact: false, explanation: '爱因斯坦数学天赋极高，不及格传闻源于德国和瑞士评分等级的不同误读。' },
+            { id: 'h8', claim: '莫扎特是被他的竞争对手萨列里下毒害死的。', isFact: false, explanation: '这是戏剧创作。目前医学认为莫扎特死于急性风湿热或其他自然疾病。' },
+            { id: 'h9', claim: '泰坦尼克号上的三等舱乘客被锁在下面不准上甲板救生。', isFact: false, explanation: '没有制度性阻拦，主要是由于三等舱位于底部，迷宫般的走廊和语言不通阻碍了撤离。' },
+            { id: 'h10', claim: '罗马帝国灭亡的原因之一是普遍铅中毒导致精英阶层智力退化。', isFact: false, explanation: '虽然罗马人使用铅水管，但沉积的钙质形成了保护膜，铅中毒并非帝国覆灭主因。' },
+            { id: 'h11', claim: '富兰克林并没有通过风筝实验证明闪电是电。', isFact: false, explanation: '他确实提出了实验设想并可能实施，但并非直接被雷击（那会丧命），而是通过感应起电。' },
+            { id: 'h12', claim: '中世纪的欧洲其实并不是一个充满黑暗、无知且没有科学进步的时代。', isFact: true, explanation: '中世纪诞生了大学、哥特建筑、现代银行雏形及早期的逻辑科学。' },
+            { id: 'h13', claim: '爱迪生并没有发明电灯泡，他只是改良了灯丝使其具备商用价值。', isFact: true, explanation: '在爱迪生之前，斯旺等20多位发明家已经提出了各种电灯原型。' },
+            { id: 'h14', claim: '耶稣基督并不是在公元元年12月25日出生的。', isFact: true, explanation: '《圣经》未记载具体日期，12月25日是后来为了取代罗马冬至节庆而定。' },
+            { id: 'h15', claim: '古代日本武士切腹并不是一种认输，而是一种证明名誉的高贵死法。', isFact: true, explanation: '武士道认为腹部是灵魂寄宿处，切腹是展示自己坦荡灵魂的仪式。' },
+            { id: 'h16', claim: '林肯签署《解放黑奴宣言》后，美国所有的奴隶立刻获得了自由。', isFact: false, explanation: '宣言仅涉及南方的反叛州，许多边界州的奴隶直到内战结束和宪法第13修正案才自由。' },
+            { id: 'h17', claim: '斯巴达300勇士在温泉关之战中其实还有数千名盟军在并肩作战。', isFact: true, explanation: '除了300名斯巴达精锐，还有塞斯比阿人、底比斯人等约数千盟军参与防御。' },
+            { id: 'h18', claim: '牛顿并没有因为被苹果砸到头而悟出万有引力。', isFact: true, explanation: '牛顿曾提到观察苹果落地触发了灵感，但并没有证据显示苹果砸到了他的头。' },
+            { id: 'h19', claim: '所谓的“丝绸之路”并不是一条单一的道路，而是复杂的贸易网。', isFact: true, explanation: '它包含了陆路、海路，跨越数千公里，涉及数百个中转城镇。' },
+            { id: 'h20', claim: '断头台的发明者吉约坦医生本人最后也被断头台处决了。', isFact: false, explanation: '吉约坦医生反对死刑但提倡人道行刑，他死于肩部炭疽，而非断头台。' },
+            { id: 'h21', claim: '玛丽·安托瓦内特皇后从未说过“百姓没面包吃为什么不吃蛋糕”。', isFact: true, explanation: '这句话最早出现在卢梭的自传中，当时玛丽皇后还没来到法国或只是个孩子。' },
+            { id: 'h22', claim: '特洛伊木马在历史上很可能只是一个巨大的攻城器械，而非空心木马。', isFact: true, explanation: '历史学家认为木马可能是对覆盖了湿马皮的攻城槌或海神象征的隐喻。' },
+            { id: 'h23', claim: '瓦特发明了世界上第一台蒸汽机。', isFact: false, explanation: '纽科门在瓦特之前半个世纪就发明了实用的蒸汽机，瓦特主要是发明了分离式冷凝器大幅提升了效率。' },
+            { id: 'h24', claim: '古希腊的大多数雕塑在当时其实是涂满了鲜艳色彩的。', isFact: true, explanation: '大理石白色是由于数千年的风化剥落，原本的雕塑色彩斑斓、极具视觉冲击。' },
+            { id: 'h25', claim: '第二次世界大战中，苏联是付出平民和军事伤亡最沉重的盟国。', isFact: true, explanation: '苏联在二战中损失了约2700万人，是二战主战场之一。' },
+            { id: 'h26', claim: '铁木真（成吉思汗）在位期间，蒙古帝国实现了前所未有的治安稳定。', isFact: true, explanation: '史称“蒙古和平”，据说少女头顶金盘横跨帝国也不会被打劫。' },
+            { id: 'h27', claim: '《蒙娜丽莎》在卢浮宫之所以成名，是因为它曾在20世纪初失窃过。', isFact: true, explanation: '1911年的失窃案引发全球关注，在此之前它在卢浮宫内名气并不算冠绝全球。' },
+            { id: 'h28', claim: '古罗马人会因为吃得太饱而专门去呕吐房呕吐以便继续吃。', isFact: false, explanation: 'Vomitorium（呕吐房）其实指的是剧场内让观众快速疏散的通道（Vomit-入/出）。' },
+            { id: 'h29', claim: '明朝的郑和下西洋船队中，最大的“宝船”排水量超过万吨。', isFact: true, explanation: '根据史料和考古发现，郑和宝船规模宏大，在当时是世界造船技术的巅峰。' },
+            { id: 'h30', claim: '苏美尔文明是目前人类考古发现的最古老的文明。', isFact: true, explanation: '苏美尔文明位于美索不达米亚，拥有最早的文字、城邦和法律体系。' }
+          ],
+          '健康养生': [
+            { id: 'a1', claim: '每天必须喝够8杯水（约2升）才能维持健康。', isFact: false, explanation: '需水量因人而异，食物中含水量大，“口渴感”是更好的指标。' },
+            { id: 'a2', claim: '人的大脑只开发了10%，剩下的都是潜能。', isFact: false, explanation: '大脑几乎所有区域都有功能，我们在日常生活中会用到100%的大脑。' },
+            { id: 'a3', claim: '感冒时通过“盖厚被子捂汗”可以加速病情好转。', isFact: false, explanation: '捂汗可能导致脱水和体温过高，感冒恢复靠免疫系统，捂汗仅能缓解寒战感。' },
+            { id: 'a4', claim: '熬夜后通过周末补觉可以完全修复对身体造成的伤害。', isFact: false, explanation: '生物钟紊乱对内分泌的影响是不可逆积累的，补觉只能缓解疲劳感，无法完全抵消损伤。' },
+            { id: 'a5', claim: '手机辐射是导致现代人脱发和失眠的主要原因。', isFact: false, explanation: '缺乏科学证据证明手机非电离辐射会导致脱发。失眠更多与屏幕蓝光抑制褪黑素有关。' },
+            { id: 'a6', claim: '天然的代糖（如赤藓糖醇）完全可以像喝水一样无节制摄入。', isFact: false, explanation: '过量摄入代糖可能引发胀气、腹泻，且部分研究显示可能影响肠道菌群。' },
+            { id: 'a7', claim: '饭后立即刷牙更有助于保护牙釉质。', isFact: false, explanation: '吃完酸性食物后牙釉质会暂时变软，立即刷牙易磨损，建议饭后半小时再刷。' },
+            { id: 'a8', claim: '深海鱼油的主要功效是提高儿童智力。', isFact: false, explanation: '鱼油中的DHA对脑发育有益，但它主要被证实对成人心血管健康更有积极作用。' },
+            { id: 'a9', claim: '维生素C吃得越多，免疫力就越强。', isFact: false, explanation: '过量维C会通过尿液排出，长期过量摄入可能导致草酸钙结石。' },
+            { id: 'a10', claim: '晚上6点后禁食是一种健康有效的减脂方法。', isFact: true, explanation: '这是轻断食的一种，有助于限制总热量摄入，但核心仍是全天的热量缺口。' },
+            { id: 'a11', claim: '吃黑芝麻可以让白发变黑。', isFact: false, explanation: '黑芝麻无法改变基因导致的白发，仅能提供部分微量元素，对黑色素生成作用有限。' },
+            { id: 'a12', claim: '所谓的“排毒产品”大多没有科学依据。', isFact: true, explanation: '人体通过肝、肾和皮肤有极其高效的排毒机制，市面排毒产品大多是导泻剂。' },
+            { id: 'a13', claim: '长期坚持冷水澡可以增强免疫系统并改善心情。', isFact: true, explanation: '冷刺激能提升白细胞水平和多巴胺释放，但心脏病患者需谨慎。' },
+            { id: 'a14', claim: '水果在饭前吃比饭后吃吸收效果更好。', isFact: false, explanation: '消化系统随时都能吸收营养，饭前或饭后吃主要影响饱腹感，营养吸收差异极小。' },
+            { id: 'a15', claim: '所有的反式脂肪酸对心血管都是有害的。', isFact: true, explanation: '人造反式脂肪会显著提高低密度脂蛋白（坏胆固醇）水平，增加心脏病风险。' },
+            { id: 'a16', claim: '经常修剪头发会让头发长得更快更浓密。', isFact: false, explanation: '头发生长源于毛囊，修剪发梢不会影响毛囊生长速度，只是去除了枯黄分叉。' },
+            { id: 'a17', claim: '午睡时间过长（超过1小时）反而会让人感觉更累。', isFact: true, explanation: '长午睡可能进入深睡眠阶段，醒来时产生“睡眠惯性”，导致头晕脑胀。' },
+            { id: 'a18', claim: '味精（谷氨酸钠）是导致所谓“中餐馆综合征”的元凶。', isFact: false, explanation: '多项盲测实验未能证实味精与这些症状有因果关系，味精在适量下是安全的。' },
+            { id: 'a19', claim: '所有的运动中，游泳对关节的压力最小。', isFact: true, explanation: '水的浮力抵消了重力，游泳是关节劳损者和肥胖者首选的低冲击运动。' },
+            { id: 'a20', claim: '长期服用褪黑素会产生药物依赖性。', isFact: false, explanation: '褪黑素是激素补充，不具成瘾性，但长期滥用可能反馈抑制自身褪黑素生成。' },
+            { id: 'a21', claim: '由于其高含糖量，蜂蜜其实并不比白糖健康多少。', isFact: true, explanation: '蜂蜜80%是糖，升糖指数也很高，虽然含微量元素，但热量负担与糖相似。' },
+            { id: 'a22', claim: '牙龈出血主要是因为缺乏维生素C。', isFact: false, explanation: '现代人出血主因是牙周炎和菌斑积聚，单纯补维C不治本，需要正规洗牙和洁治。' },
+            { id: 'a23', claim: '指甲上的半月牙越多，代表身体越健康。', isFact: false, explanation: '半月牙仅代表指甲生长速度快慢，数量多少受多种因素影响，不能直接衡量体质。' },
+            { id: 'a24', claim: '快走和慢跑的减脂效率在同等心率下是相似的。', isFact: true, explanation: '减脂主要取决于运动强度（心率）和持续时间，而非具体的动作形式。' },
+            { id: 'a25', claim: '经常伸懒腰（哈欠）有助于舒缓背部肌肉并增加血氧。', isFact: true, explanation: '这是一种自然的反射性拉伸，有助于调节自主神经系统。' },
+            { id: 'a26', claim: '所谓的“宿便”在现代医学中是一个伪概念。', isFact: true, explanation: '肠道正常蠕动排空，并没有陈年累月堆积的“毒性物质”粘在肠壁。' },
+            { id: 'a27', claim: '长期低头玩手机对颈椎造成的压力相当于背负一个50斤的孩子。', isFact: true, explanation: '低头60度时，颈部肌肉和椎间盘承受的压力约是平视时的5倍。' },
+            { id: 'a28', claim: '喝红酒可以保护心脏，是因为其中含有大量的白藜芦醇。', isFact: false, explanation: '红酒中白藜芦醇含量极低，达到实验保护剂量需要每天喝几百瓶。酒精伤害远超其益处。' },
+            { id: 'a29', claim: '纯母乳喂养在前六个月通常不需要给婴儿额外喂水。', isFact: true, explanation: '母乳中80%以上是水，且含有完美的矿物质配比，额外喂水反而增加肾脏负担。' },
+            { id: 'a30', claim: '人的一生中，基础代谢率在20岁到60岁之间其实是非常稳定的。', isFact: true, explanation: '最新研究显示代谢在成年后相当平稳，中老年发福更多源于活动量减少。' }
+          ]
+        };
+
+        const App = () => {
+          const [view, setView] = useState('START');
+          const [currentTopic, setCurrentTopic] = useState('');
+          const [questions, setQuestions] = useState([]);
+          const [cursor, setCursor] = useState(0);
+          const [score, setScore] = useState(0);
+          const [answered, setAnswered] = useState(false);
+          const [lastCorrect, setLastCorrect] = useState(false);
+
+          const startQuiz = (topic) => {
+            setCurrentTopic(topic);
+            setView('LOADING');
+            setTimeout(() => {
+              setQuestions(QUESTION_BANK[topic] || []);
+              setCursor(0);
+              setScore(0);
+              setAnswered(false);
+              setView('QUIZ');
+            }, 600);
+          };
+
+          const handleAnswer = (val) => {
+            const isCorrect = val === questions[cursor].isFact;
+            if (isCorrect) setScore(s => s + 1);
+            setLastCorrect(isCorrect);
+            setAnswered(true);
+          };
+
+          const nextQuestion = () => {
+            if (cursor < questions.length - 1) {
+              setCursor(c => c + 1);
+              setAnswered(false);
+            } else {
+              setView('RESULTS');
+            }
+          };
+
+          const handleShare = async () => {
+            const url = window.location.href;
+            const isLocal = window.location.protocol === 'file:';
+            const shareUrl = isLocal ? 'https://github.com/' : url;
+            if (navigator.share && !isLocal) {
+              try { await navigator.share({ title: '止谣于视', url: shareUrl }); return; } catch (e) {}
+            }
+            await navigator.clipboard.writeText(shareUrl);
+            alert('分享链接已复制到剪贴板');
+          };
+
+          return (
+            <div className="min-h-screen p-4 sm:p-12 flex flex-col items-center max-w-5xl mx-auto selection:bg-[#0055FF] selection:text-white">
+              <header className="w-full flex justify-between items-center border-b-2 border-[#1D1D1F] pb-4 mb-8 sm:mb-12">
+                <span className="text-xl sm:text-2xl font-black tracking-tighter cursor-pointer" onClick={() => setView('START')}>
+                  VERITAS <span className="text-[#0055FF]">|</span> 止谣于视
+                </span>
+                <span className="text-[10px] font-bold uppercase text-gray-400 tracking-widest hidden sm:block">30 DEEP QUESTIONS PER TOPIC</span>
+              </header>
+
+              <main className="w-full flex-grow">
+                {view === 'START' && (
+                  <div className="animate-fade-up">
+                    <h1 className="text-5xl sm:text-8xl font-black tracking-tighter mb-8 leading-none">
+                      深度 <br/><span className="text-[#0055FF]">辩证</span> 真相。
+                    </h1>
+                    <p className="text-gray-500 mb-12 max-w-2xl border-l-4 border-[#0055FF] pl-6 font-bold text-base sm:text-lg">
+                      我们为每个领域准备了 30 道深度测试题。在这个信息碎片化的时代，唯有独立思考能让你看清世界。
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                      {Object.keys(QUESTION_BANK).map(t => (
+                        <button key={t} onClick={() => startQuiz(t)} className="bg-white border-2 border-[#1D1D1F] p-8 text-left neo-shadow hover:bg-[#F0F0F2] active-press transition-all group">
+                          <div className="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Selected Archives</div>
+                          <div className="text-2xl sm:text-3xl font-black group-hover:text-[#0055FF] flex justify-between items-center">
+                            {t} <span>→</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {view === 'LOADING' && (
+                  <div className="py-24 flex flex-col items-center animate-fade-up">
+                    <div className="w-16 h-16 border-8 border-[#1D1D1F] border-t-[#0055FF] animate-spin mb-6"></div>
+                    <div className="font-black tracking-widest uppercase text-lg">正在加载 30 道精选辩证题...</div>
+                  </div>
+                )}
+
+                {view === 'QUIZ' && questions[cursor] && (
+                  <div className="max-w-3xl mx-auto w-full animate-fade-up">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+                      <div className="flex-1">
+                        <div className="text-sm font-bold uppercase text-gray-400 mb-1">Question Progress</div>
+                        <div className="text-4xl font-black">{String(cursor + 1).padStart(2, '0')}<span className="text-[#0055FF] text-xl"> / {questions.length}</span></div>
+                      </div>
+                      <div className="w-full sm:w-48">
+                        <div className="h-4 bg-gray-200 border-2 border-[#1D1D1F] relative overflow-hidden">
+                          <div className="h-full bg-[#0055FF] transition-all duration-300" style={{ width: `${((cursor + 1)/questions.length)*100}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white border-2 border-[#1D1D1F] p-8 sm:p-16 neo-shadow mb-10 min-h-[200px] flex items-center">
+                      <h2 className="text-2xl sm:text-4xl font-bold leading-tight tracking-tight">“{questions[cursor].claim}”</h2>
+                    </div>
+
+                    {!answered ? (
+                      <div className="grid grid-cols-2 gap-6">
+                        <button onClick={() => handleAnswer(true)} className="border-2 border-[#1D1D1F] py-8 text-2xl font-black hover:bg-[#1D1D1F] hover:text-white transition-all active-press">事实</button>
+                        <button onClick={() => handleAnswer(false)} className="border-2 border-[#1D1D1F] py-8 text-2xl font-black hover:bg-[#1D1D1F] hover:text-white transition-all active-press">虚构</button>
+                      </div>
+                    ) : (
+                      <div className="space-y-6 animate-fade-up">
+                        <div className={`p-6 border-4 font-black text-xl sm:text-2xl uppercase tracking-wider ${lastCorrect ? 'bg-green-50 border-green-600 text-green-700' : 'bg-red-50 border-red-600 text-red-700'}`}>
+                          {lastCorrect ? 'TRUE // 正确辩证' : 'FALSE // 识别偏离'}
+                        </div>
+                        <div className="bg-[#1D1D1F] text-white p-8 neo-shadow-sm">
+                          <div className="font-bold text-[10px] text-[#0055FF] uppercase mb-3 tracking-widest">Veritas Analysis</div>
+                          <p className="text-lg sm:text-xl leading-relaxed text-gray-200">{questions[cursor].explanation}</p>
+                        </div>
+                        <button onClick={nextQuestion} className="w-full bg-[#0055FF] text-white py-6 text-2xl font-black hover:bg-[#0044CC] transition-all active-press neo-shadow-sm">
+                          {cursor === questions.length - 1 ? '查看报告单' : '下一项辩证 →'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {view === 'RESULTS' && (
+                  <div className="text-center py-8 animate-fade-up max-w-2xl mx-auto">
+                    <div className="inline-block border-[12px] border-[#1D1D1F] p-12 mb-10 neo-shadow relative bg-white">
+                      <div className="text-9xl font-black tracking-tighter leading-none">{Math.round((score/questions.length)*100)}%</div>
+                      <div className="font-black uppercase tracking-widest mt-4 text-[#0055FF]">Truth Accuracy</div>
+                    </div>
+                    <div className="mb-12">
+                      <h2 className="text-4xl sm:text-6xl font-black mb-6 tracking-tighter">
+                        等级：{score === questions.length ? '真理圣徒' : score >= questions.length * 0.8 ? '理性智者' : score >= questions.length * 0.5 ? '普通公民' : '易误导人群'}
+                      </h2>
+                      <p className="text-gray-500 text-lg sm:text-xl font-bold max-w-lg mx-auto leading-relaxed">
+                        你在 {currentTopic} 领域的 30 道深度辩证中答对了 {score} 题。在这个充满杂音的世界，保持冷静和独立是最高级的武器。
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-6">
+                      <button onClick={() => setView('START')} className="flex-1 bg-[#1D1D1F] text-white py-6 font-black text-2xl hover:bg-[#0055FF] active-press transition-all neo-shadow-sm">重新挑战</button>
+                      <button onClick={handleShare} className="flex-1 border-4 border-[#1D1D1F] py-6 font-black text-2xl hover:bg-gray-100 active-press transition-all">同步结果</button>
+                    </div>
+                  </div>
+                )}
+              </main>
+
+              <footer className="w-full mt-24 pt-10 border-t-2 border-[#1D1D1F] flex flex-col sm:flex-row justify-between items-center text-[10px] font-black text-gray-400 tracking-widest gap-6 uppercase">
+                <div className="flex items-center gap-4">
+                  <span className="bg-[#1D1D1F] text-white px-2 py-0.5">EST. 2025</span>
+                  <span>VERITAS LABS // GLOBAL TRUTH PROTOCOL</span>
+                </div>
+                <div className="flex gap-8">
+                  <a href="#" className="hover:text-[#0055FF] transition-colors">Documentation</a>
+                  <a href="#" className="hover:text-[#0055FF] transition-colors">Terms of Service</a>
+                </div>
+              </footer>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
