@@ -1,16 +1,36 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
+![Vite](https://img.shields.io/badge/Vite-Fast-646CFF)
+![AI Agent](https://img.shields.io/badge/AI-Multi--Agent-FF9900)
+![LLM](https://img.shields.io/badge/LLM-Gemini_API-0088FF)
+本项目为基于大语言模型（LLM）与多智能体（Multi-Agent）架构构建的互动辟谣教育矩阵。旨在通过“游戏化 + AI”的柔性方式，解决信息茧房时代虚假信息泛滥、传统说教式辟谣易引发代际对立的社会痛点。
+项目包含两个核心模块：**《辟谣防卫战》家庭群模拟游戏** 与 **《止谣于视》真实性辩证 Web 平台**。
+---
+## 🎮 模块一：《辟谣防卫战》 (Family Chat Simulator Game)
+这是一个基于 MBTI 框架与多智能体博弈的互动卡牌游戏。玩家将扮演年轻一代，在模拟的“相亲相爱一家人”微信群聊中，利用逻辑与情感卡牌化解长辈转发的谣言。
+### 🌟 核心 AI 架构设计
+- **多角色 Persona Agent**：构建了 6 类典型的长辈人格模型（如固执大爷、焦虑老妈、养生专家等）。
+- **动态状态机流转**：每个 Agent 具备独立的“认知偏好”与“辟谣抗性”。当玩家打出“事实论据牌”或“情感共鸣牌”时，群聊中的 Agent 会触发内部逻辑演算，决定是否被说服，并生成符合人设的动态回应。
+- **双轨数值博弈**：引入“家庭和谐度(HP)”与“谣言污染度”双轨机制，考验玩家在科学真相与情感温度间的统筹平衡。
+### 🛠️ 技术栈
+- **前端架构**：React 18 + Vite + Tailwind CSS v4
+- **动效引擎**：Framer Motion (丝滑的卡牌交互体验)
+- **跨平台**：采用 Capacitor 支持打包为独立运行的本地 APK/Web 离线版。
+---
+## 🌐 模块二：《止谣于视》 (Truth Dialectic Web Platform)
+一个专注于培养用户批判性思维的互动测验平台。通过 LLM 的长链推理能力，实现千人千面的动态解析。
+### 🌟 核心功能与逻辑
+- **高频场景覆盖**：涵盖 30 个高频科技与百科领域的经典谣言误区。
+- **实时长链解析**：接入 Gemini 大语言模型 API。当用户完成“事实/虚构”的二元判断后，后台 LLM Agent 会根据用户的选择生成深度解析（Explainable AI），详细阐述“为什么是事实/虚构”，帮助用户知其然更知其所以然。
+- **纯前端驱动**：系统采用前端与无服务器 API 直接交互的设计，响应极速。
+### 🛠️ 技术栈
+- **框架**：React + TypeScript
+- **大模型接口**：Gemini API (可平替接入千帆/智谱等国内模型)
+---
+## 🚀 快速启动 (离线运行版)
+本项目已经打包完毕，支持在本地完全离线或极简环境中运行：
+1. **游戏模块**：进入 `辟谣防卫战(游戏)` 目录，直接双击 `index.html`（或使用本地 Live Server 启动），即可体验完整流程。所有状态均存在于内存中，无数据库依赖。
+2. **Web 模块**：进入 `网站` 目录，启动方式同上。答题后可查看互动反馈逻辑。
+---
+## 📢 作者特别声明 (Author's Note)
+*注：除本开源项目外，作者同期正在主导开发闭源商业项目 **[XHS Auto Publisher V3 多 Agent 自动化运营系统]**。该系统包含底层 CDP 协议与 Stealth 深度反爬模块（用于爆款图文挖掘）、基于 LLM 的长链二创内容裂变引擎，以及本地 SQLite 驱动的 UI 调度队列分发系统。因涉及商业爬虫核心逻辑与自动化防风控策略，暂不开源。相关的系统架构图与终端运行日志已在相关资助/API 额度申请表中作为附件提交。
